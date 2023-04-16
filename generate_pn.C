@@ -6,7 +6,7 @@ TH1D* h_pt;
 double random_r_phi()//generate random position-> phi
 {
 	gRandom->SetSeed(0);
-	return gRandom->Uniform(-TMath::Pi(), -TMath::Pi());
+	return gRandom->Uniform(-TMath::Pi(), +TMath::Pi());
 }
 
 double random_r_rho()//generate rnadom position -> rho	(here is a cylindrical coordinate, z-axis is along the beam direction)
