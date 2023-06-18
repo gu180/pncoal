@@ -1,3 +1,5 @@
+#include "./filename_pncoal.h"
+
 const double mass_proton=0.938272088;
 const double mass_neutron=0.939565420;
 
@@ -77,8 +79,14 @@ vector<TLorentzVector> single_nucleon(int charge)
 }
 
 void generate_pn()
-{gRandom->SetSeed(0);
-	TFile* output=TFile::Open("nucleon.root", "recreate");//create a root file as output to store all the nucleon information
+{
+	gROOT->ProcessLine(".L loader.C+");	
+
+	gRandom->SetSeed(0);
+	tag on=getfilename_nucleon("v1","");
+	MakeDir(on);
+
+	TFile* output=TFile::Open(on, "recreate");//create a root file as output to store all the nucleon information
 	TTree* tree_nucleons=new TTree("tree_nucleons", "a tree to store nucleon information");
 	//TTree* tree_proton=new TTree("tree_proton", "a tree to store proton information");
 	//TTree* tree_neutron=new TTree("tree_neutron", "a tree to store neutron information");

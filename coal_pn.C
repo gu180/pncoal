@@ -79,7 +79,7 @@ vector<TLorentzVector> single_nucleon(int charge)//TLorentzVector is a ROOT clas
 	return particle;
 }
 
-double wignerfunction(vector<TLorentzVector> a, vector<TLorentzVector> b, double sigma_r, double sigma_p)
+double wignerfunction(vector<TLorentzVector> &a, vector<TLorentzVector> &b, double sigma_r, double sigma_p)
 {
 	if(1)//boost to the center of mass frame of particle a and b.
 	{
@@ -103,7 +103,7 @@ double wignerfunction(vector<TLorentzVector> a, vector<TLorentzVector> b, double
 	TVector3 deltap=a[1].Vect()-b[1].Vect();
 
 
-	double wigner=exp(-deltar.Mag2()/(sigma_r*sigma_r)-deltap.Mag2()/(sigma_p*sigma_p)); //Gaussian Wigner function
+	double wigner=8*exp(-deltar.Mag2()/(sigma_r*sigma_r)-deltap.Mag2()/(sigma_p*sigma_p)); //Gaussian Wigner function
 
 	return wigner;
 
