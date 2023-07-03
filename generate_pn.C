@@ -95,9 +95,21 @@ h_pt=new TH1D("h_pt", "pt spectrum of protons", 100, 0, 10);
 
 	vector<vector<TLorentzVector>> protons;
 	vector<vector<TLorentzVector>> neutrons;
+	
+	vector<TLorentzVector> protons_r;
+	vector<TLorentzVector> protons_p;
+	vector<TLorentzVector> neutrons_r;
+	vector<TLorentzVector> neutrons_p;
 
 	tree_nucleons->Branch("protons", &protons);
 	tree_nucleons->Branch("neutrons", &neutrons);
+
+	/*
+	tree_nucleons->Branch("protons_r", &protons_r);
+	tree_nucleons->Branch("protons_p", &protons_p);
+	tree_nucleons->Branch("neutrons_r", &neutrons_r);
+	tree_nucleons->Branch("neutrons_p", &neutrons_p);
+	*/
 
 	for(int i=0; i< Nevent; ++i)
 	{
@@ -111,12 +123,16 @@ h_pt=new TH1D("h_pt", "pt spectrum of protons", 100, 0, 10);
 		{
 			vector<TLorentzVector> proton=single_nucleon(1);
 			protons.push_back(proton);
+			//protons_r.push_back(proton[0]);
+			//protons_p.push_back(proton[1]);
 		}
 
 		for(int j=0; j<number_neutron; ++j)
 		{
 			vector<TLorentzVector> neutron=single_nucleon(0);
 			neutrons.push_back(neutron);
+			//neutrons_r.push_back(neutron[0]);
+			//neutrons_p.push_back(neutron[1]);
 		}
 		tree_nucleons->Fill();
 	}
