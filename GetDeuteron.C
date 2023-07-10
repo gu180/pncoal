@@ -1,18 +1,22 @@
 #include "./filename_pncoal.h"
+#include "/home/gu180/utility/vector_ut.h"
 #include "./Wigner.h"
+#include "./version.h"
 void GetDeuteron()//This example shows the integral to calculate the average number of deutron per event
 //All the values in this script are set causally, only as an example.
 {
+
+
 	gROOT->ProcessLine(".L loader.C+");	
 
-	double sigma_r=2.126; //fm charge radius of deuteron
+	double sigma_r=1.96; //fm charge radius of deuteron
 	double sigma_p=1/(5.068*sigma_r);//1.0 fm^-1=
 
 	gRandom->SetSeed(0);
 
 
 	//---------------------------
-	tag in=getfilename_nucleon("v1","");
+	tag in=getfilename_nucleon(vtag,"");
 	TFile* input=TFile::Open(in);
 	TTree* tree_nucleons= (TTree*) input->Get("tree_nucleons");
 	
@@ -20,7 +24,7 @@ void GetDeuteron()//This example shows the integral to calculate the average num
 	TTreeReaderValue<vector<vector<TLorentzVector>>> protons(reader, "protons");
 	TTreeReaderValue<vector<vector<TLorentzVector>>> neutrons(reader, "neutrons");
 	//---------------------------
-	tag on=getfilename_deuteron("v1", "");
+	tag on=getfilename_deuteron(vtag, "");
 	MakeDir(on);
 	TFile* output=TFile::Open(on, "recreate");
 	//---------------------------
@@ -57,6 +61,9 @@ void GetDeuteron()//This example shows the integral to calculate the average num
 		deuterons.clear();
 		protons_output.clear();
 		neutrons_output.clear();
+	
+		used_p_.clear();
+		used_n_.clear();
 
 		protons_output.assign(protons->begin(), protons->end());
 		neutrons_output.assign(neutrons->begin(), neutrons->end());
@@ -80,15 +87,31 @@ void GetDeuteron()//This example shows the integral to calculate the average num
 					TLorentzVector p_deuteron=proton[1]+neutron[1];
 					vector<TLorentzVector> deuteron{r_deuteron, p_deuteron};
 					deuterons.push_back(deuteron);
+					
+					//cout<<"Deuteron sucess"<<endl;
 
-					used_p[i]==1;
-					used_n[j]==1;
+					used_p[i]=1;
+					used_n[j]=1;
 					break;
 				}
 			}
 		}
 		used_p_=used_p;
 		used_n_=used_n;
+		//Print(used_p_);
+		//Print(used_p);
+
+		int N_p_free=CountFree(used_p_);
+		int N_n_free=CountFree(used_n_);
+		int N_d_free=deuterons.size();
+		int N_d=N_d_free;
+
+	
+		cout<<"Event "<<event_N<<endl;
+		cout<<"Np="<<N_p<<" Np_free="<<N_p_free<<endl;
+		cout<<"Nn="<<N_n<<" Nn_free="<<N_n_free<<endl;
+		cout<<"N_d="<<N_d<<" N_d_free="<<N_d_free<<endl;
+		//cout<<"N_t="<<N_t<<" N_t_free="<<N_t_free<<endl;
 
 		deutree->Fill();
 		tree_nucleons_output->Fill();

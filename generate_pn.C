@@ -1,7 +1,9 @@
 #include "./filename_pncoal.h"
+#include "./version.h"
 
 const double mass_proton=0.938272088;
 const double mass_neutron=0.939565420;
+const double kTemprature=0.5;
 
 TH1D* h_pt;
 
@@ -15,7 +17,7 @@ double random_r_rho()//generate rnadom position -> rho	(here is a cylindrical co
 							//This function will return a rho value with PDF proportional to rho P(rho)=rho;
 {
 	gRandom->SetSeed(0);
-	double r_max=20; //set the maximum rho as 20 fm, this value can be modified, you can search reference for a more reasonable value. This is an occasional value for example.
+	double r_max=10; //set the maximum rho as 20 fm, this value can be modified, you can search reference for a more reasonable value. This is an occasional value for example.
 	double x;
 	double y;
 	do
@@ -29,7 +31,7 @@ double random_r_rho()//generate rnadom position -> rho	(here is a cylindrical co
 double random_r_z()//generate random position -> z
 {
 	gRandom->SetSeed(0);
-	return gRandom->Uniform(-10,10); //assume z to be uniformly distributed between -10, +10 fm. This is an occasional value for example.
+	return gRandom->Uniform(-5,5); //assume z to be uniformly distributed between -10, +10 fm. This is an occasional value for example.
 }
 
 double random_p_phi()//generate random momentum-> phi  Uniform distributed between -pi +pi;
@@ -49,7 +51,7 @@ double random_p_pt()//generate rnadom momentum -> pt	(here is a cylindrical coor
 	{
 		x=gRandom->Uniform(0, r_max);
 		y=gRandom->Uniform(0, r_max);
-	}while(exp(-x/(10.0))<y);
+	}while(exp(-x/(kTemprature))<y);
 	h_pt->Fill(x);
 	return x;
 }
@@ -83,7 +85,7 @@ void generate_pn()
 	gROOT->ProcessLine(".L loader.C+");	
 
 	gRandom->SetSeed(0);
-	tag on=getfilename_nucleon("v1","");
+	tag on=getfilename_nucleon(vtag,"");
 	MakeDir(on);
 
 	TFile* output=TFile::Open(on, "recreate");//create a root file as output to store all the nucleon information
@@ -91,7 +93,8 @@ void generate_pn()
 	//TTree* tree_proton=new TTree("tree_proton", "a tree to store proton information");
 	//TTree* tree_neutron=new TTree("tree_neutron", "a tree to store neutron information");
 h_pt=new TH1D("h_pt", "pt spectrum of protons", 100, 0, 10);
-	int Nevent=10; //number of events
+
+	int Nevent=10000; //number of events
 
 	vector<vector<TLorentzVector>> protons;
 	vector<vector<TLorentzVector>> neutrons;
@@ -113,8 +116,8 @@ h_pt=new TH1D("h_pt", "pt spectrum of protons", 100, 0, 10);
 
 	for(int i=0; i< Nevent; ++i)
 	{
-		int number_proton=100; //number of protons, here is just an exmaple
-		int number_neutron=100;
+		int number_proton =gRandom->Poisson(20); //number of protons, here is just an exmaple
+		int number_neutron=gRandom->Poisson(20);
 		cout<<"Event "<<i<<endl;
 		protons.clear();
 		neutrons.clear();
