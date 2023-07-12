@@ -1,6 +1,7 @@
 #include "./filename_pncoal.h"
 #include "./Wigner.h"
 #include "./version.h"
+#include "/home/gu180/utility/vector_ut.h"
 
 void GetTriton()
 {
@@ -38,6 +39,10 @@ void GetTriton()
 	vector<vector<TLorentzVector>> tritons;
 	tree_tritons->Branch("tritons", &tritons);
 
+	TTree *tree_heliums= new TTree("tree_heliums","a tree to store the information of heliums");
+	vector<vector<TLorentzVector>> heliums;
+	tree_heliums->Branch("heliums", &heliums);
+
 	TTree *tree_nucleons_output=new TTree("tree_nucleons_output","");
 	vector<bool> used_p_;
 	vector<bool> used_n_;
@@ -63,6 +68,7 @@ void GetTriton()
 	Long64_t Nevent_deuterons=tree_deuterons->GetEntries();
 	cout<<"Nevent_nucleons: "<<Nevent_nucleons<<endl;
 	cout<<"Nevent_deuterons: "<<Nevent_deuterons<<endl;
+	if(Nevent_nucleons!=Nevent_deuterons){cout<<"Nevent_nucleons!=Nevent_deuterons!"<<endl;return;}
 	for(Long64_t i_event=0; i_event<Nevent_nucleons; i_event++)
 	{
 		reader_nucleon.SetEntry(i_event);
@@ -81,6 +87,7 @@ void GetTriton()
 		used_n.assign(neutron_useds->begin(), neutron_useds->end());
 
 		tritons.clear();
+		heliums.clear();
 		protons_output.clear();
 		neutrons_output.clear();
 		deuterons_output.clear();
@@ -89,34 +96,72 @@ void GetTriton()
 		neutrons_output.assign(neutrons->begin(), neutrons->end());
 		deuterons_output.assign(deuterons->begin(), deuterons->end());
 
+
+		vector<int> idxs_nucleon=RandomNumbers(N_n+N_p);
+		Print(idxs_nucleon);
+
 		for(int i=0; i<N_d; ++i)
 		{
-			for(int j=0; j<N_n; ++j)
+			if(used_d[i]==1){continue;}
+			for(int j_=0; j_<N_n+N_p; ++j_)
 			{
+				int j=idxs_nucleon[j_];
+				int nucleon_pid;
+				if(j<N_n){nucleon_pid=1;} //neutron
+				if(j>=N_n){nucleon_pid=2;j=j-N_n;}//proton
 				if(used_d[i]==1){continue;}
-				if(used_n[j]==1){continue;}
-				
-				//vector<TLorentzVector> proton=protons->at(i);	
-				vector<TLorentzVector> deuteron=deuterons->at(i);	
-				vector<TLorentzVector> neutron=neutrons->at(j);
-
-
-				WignerResult result=wignerfunction(deuteron, neutron, sigma_r, sigma_p);
-				double wigner=result.wigner_val;
-				double r=gRandom->Uniform(0,1);
-				if(r<wigner)
+				if(nucleon_pid==1)
 				{
-					TLorentzVector r_deuteron=result.r_center;
-					TLorentzVector p_deuteron=deuteron[1]+neutron[1];
-					vector<TLorentzVector> triton{r_deuteron, p_deuteron};
-					tritons.push_back(triton);
+					if(used_n[j]==1){continue;}
+					vector<TLorentzVector> deuteron=deuterons->at(i);	
+					vector<TLorentzVector> neutron=neutrons->at(j);
+					WignerResult result=wignerfunction(deuteron, neutron, sigma_r, sigma_p);
+					double wigner=result.wigner_val;
+					double r=gRandom->Uniform(0,1);
+					if(r<wigner)
+					{
+						//TLorentzVector r_deuteron=result.r_center;
+						TLorentzVector r_triton=result.r_lab;
+						TLorentzVector p_triton=deuteron[1]+neutron[1];
+						vector<TLorentzVector> triton{r_triton, p_triton};
+						tritons.push_back(triton);
 
-					used_d[i]=1;
-					used_n[j]=1;
+						used_d[i]=1;
+						used_n[j]=1;
 
-					break;
+						//break;
+						goto endloop;
+					}
 				}
+				else
+				{
+					if(used_p[j]==1){continue;}
+					vector<TLorentzVector> deuteron=deuterons->at(i);	
+					vector<TLorentzVector> proton=protons->at(j);	
+					WignerResult result=wignerfunction(deuteron, proton, sigma_r, sigma_p);
+					double wigner=result.wigner_val;
+					double r=gRandom->Uniform(0,1);
+					if(r<wigner)
+					{
+						//TLorentzVector r_deuteron=result.r_center;
+						TLorentzVector r_helium=result.r_lab;
+						TLorentzVector p_helium=deuteron[1]+proton[1];
+						vector<TLorentzVector> helium{r_helium, p_helium};
+						heliums.push_back(helium);
+
+						used_d[i]=1;
+						used_p[j]=1;
+
+						//break;
+						goto endloop;
+					}
+				}
+					
+
+
 			}
+			endloop:
+			if(0){}
 		}
 		used_d_=used_d;
 		used_n_=used_n;
@@ -126,15 +171,19 @@ void GetTriton()
 		int N_d_free=CountFree(used_d_);
 		int N_p_free=CountFree(used_p_);
 		int N_t_free=tritons.size();;
+		int N_h_free=heliums.size();;
 		int N_t=N_t_free;
+		int N_h=N_h_free;
 
 		cout<<"Event "<<event_N<<endl;
 		cout<<"Np="<<N_p<<" Np_free="<<N_p_free<<endl;
 		cout<<"Nn="<<N_n<<" Nn_free="<<N_n_free<<endl;
 		cout<<"N_d="<<N_d<<" N_d_free="<<N_d_free<<endl;
 		cout<<"N_t="<<N_t<<" N_t_free="<<N_t_free<<endl;
+		cout<<"N_h="<<N_h<<" N_h_free="<<N_h_free<<endl;
 
 		tree_tritons->Fill();
+		tree_heliums->Fill();
 		tree_deuterons_output->Fill();
 		tree_nucleons_output->Fill();
 	}
@@ -143,6 +192,7 @@ void GetTriton()
 	tree_nucleons_output->Write();
 	tree_deuterons_output->Write();
 	tree_tritons->Write();
+	tree_heliums->Write();
 	output->Write();
 	output->Close();
 	delete output;

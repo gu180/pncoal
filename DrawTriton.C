@@ -14,6 +14,8 @@ TH2D* th2d_Np_ratio;
 TProfile* tp_Nn_ratio;
 TProfile* tp_Np_ratio;
 TProfile* tp_ratio_Nn;
+TH2D* th2d_Nn_Np;
+TH2D* th2d_Nd_Nt;
 
 void SetH()
 {
@@ -22,14 +24,34 @@ void SetH()
 	tp_ratio_Nn=new TProfile("tp_ratio_Nn", "<Nn> vs. ratio", 1000,0,0.1);
 	tp_Nn_ratio=new TProfile("tp_Nn_ratio", "<ratio> vs. Nn", 200,0,200);
 	tp_Np_ratio=new TProfile("tp_Np_ratio", "<ratio> vs. Np", 200,0,200);
+
+	th2d_Nn_Np=new TH2D("th2d_Nn_Np", "Np vs. Nn", 200,0,200, 200,0,200);
+	th2d_Nd_Nt=new TH2D("th2d_Nd_Nt", "Nt vs. Nd", 200,0,200, 200,0,200);
 	
 }
 
 void LoadH(TFile* input)
 {
 	th2d_Nn_ratio=(TH2D*) input->Get("th2d_Nn_ratio");
+	th2d_Np_ratio=(TH2D*) input->Get("th2d_Np_ratio");
 	tp_ratio_Nn=(TProfile*) input->Get("tp_ratio_Nn");
 	tp_Nn_ratio=(TProfile*) input->Get("tp_Nn_ratio");
+	tp_Np_ratio=(TProfile*) input->Get("tp_Np_ratio");
+	th2d_Nn_Np=(TH2D*) input->Get("th2d_Nn_Np");
+	th2d_Nd_Nt=(TH2D*) input->Get("th2d_Nd_Nt");
+}
+
+void WriteH(TFile* output)
+{
+	output->cd();
+	th2d_Nn_ratio->Write("th2d_Nn_ratio");
+	th2d_Np_ratio->Write("th2d_Np_ratio");
+	tp_Nn_ratio->Write();
+	tp_Np_ratio->Write();
+	tp_ratio_Nn->Write();
+
+	th2d_Nn_Np->Write();
+	th2d_Nd_Nt->Write();
 }
 
 void tritondata()
@@ -140,6 +162,8 @@ void tritondata()
 		cout<<"N_d="<<N_d<<" N_d_free="<<N_d_free<<endl;
 		cout<<"N_t="<<N_t<<" N_t_free="<<N_t_free<<endl;
 #endif
+		th2d_Nn_Np->Fill(N_n_free, N_p_free);
+		th2d_Nd_Nt->Fill(N_d_free, N_t_free);
 
 		if(N_d_free==0){cout<<"No deuteron, skip"<<endl; continue;}
 
@@ -155,29 +179,31 @@ void tritondata()
 
 	MakeDir(dataname);
 	TFile* output=TFile::Open(dataname, "recreate");
-	th2d_Nn_ratio->Write("th2d_Nn_ratio");
-	tp_Nn_ratio->Write();
-	tp_ratio_Nn->Write();
+	WriteH(output);
 	output->Write();
 	delete output;
 	
 }
 
 
-void Draw_th2d(TH2D * th2d_input, tag on)
+void Draw_th2d(TH2D * th2d_input, tag on, tag xt, tag yt, vals range=vals(0))
 {
 	TCanvas c("c","c");
-	th2d_input->RebinY(10);
-	th2d_input->GetYaxis()->SetRangeUser(0,10);
-	th2d_input->GetXaxis()->SetRangeUser(0,30);
+	th2d_input->RebinY(1000);
+	th2d_input->GetYaxis()->SetRangeUser(range[2], range[3]);
+	th2d_input->GetXaxis()->SetRangeUser(range[0], range[1]);
+	th2d_input->GetXaxis()->SetTitle(xt);
+	th2d_input->GetYaxis()->SetTitle(yt);
 	th2d_input->Draw("colz");
 	c.SaveAs(on);
 }
 
 void Draw_th2d(tag op)
 {
-	Draw_th2d(th2d_Np_ratio, op+"th2d_Np_ratio.pdf");
-	Draw_th2d(th2d_Nn_ratio, op+"th2d_Nn_ratio.pdf");
+	Draw_th2d(th2d_Np_ratio, op+"th2d_Np_ratio.pdf", "Np", "ratio", vals{0,30,0,10});
+	Draw_th2d(th2d_Nn_ratio, op+"th2d_Nn_ratio.pdf", "Nn", "ratio", vals{0,30,0,10});
+	Draw_th2d(th2d_Nn_Np, op+"th2d_Nn_Np.pdf", "Nn", "Np", vals{0,30,0,30});
+	Draw_th2d(th2d_Nd_Nt, op+"th2d_Nd_Nt.pdf", "Nd", "Nt", vals{0,30,0,30});
 }
 
 void DrawTp(TProfile* tpin, tag xt, tag yt, tag on, vals range=vals(0))
@@ -225,6 +251,6 @@ void tritondraw()
 }
 void DrawTriton()
 {
-	//tritondata();
+	tritondata();
 	tritondraw();
 }

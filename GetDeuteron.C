@@ -83,7 +83,8 @@ void GetDeuteron()//This example shows the integral to calculate the average num
 				double r=gRandom->Uniform(0,1);
 				if(r<wigner)
 				{
-					TLorentzVector r_deuteron=result.r_center;
+					//TLorentzVector r_deuteron=result.r_center;
+					TLorentzVector r_deuteron=result.r_lab;
 					TLorentzVector p_deuteron=proton[1]+neutron[1];
 					vector<TLorentzVector> deuteron{r_deuteron, p_deuteron};
 					deuterons.push_back(deuteron);
