@@ -5,6 +5,9 @@ const double mass_proton=0.938272088;
 const double mass_neutron=0.939565420;
 const double kTemprature=0.5;
 
+tag outtag=vtag; //"v4" ;//vtag
+double Nsigma=2;
+
 TH1D* h_pt;
 
 double random_r_phi()//generate random position-> phi
@@ -85,7 +88,7 @@ void generate_pn()
 	gROOT->ProcessLine(".L loader.C+");	
 
 	gRandom->SetSeed(0);
-	tag on=getfilename_nucleon(vtag,"");
+	tag on=getfilename_nucleon(outtag,"");
 	MakeDir(on);
 
 	TFile* output=TFile::Open(on, "recreate");//create a root file as output to store all the nucleon information
@@ -116,8 +119,8 @@ h_pt=new TH1D("h_pt", "pt spectrum of protons", 100, 0, 10);
 
 	for(int i=0; i< Nevent; ++i)
 	{
-		int number_proton =gRandom->Poisson(20); //number of protons, here is just an exmaple
-		int number_neutron=gRandom->Poisson(20);
+		int number_proton =gRandom->Poisson(20)+gRandom->Gaus(Nsigma); //number of protons, here is just an exmaple
+		int number_neutron=gRandom->Poisson(20)+gRandom->Gaus(Nsigma);
 		cout<<"Event "<<i<<endl;
 		protons.clear();
 		neutrons.clear();

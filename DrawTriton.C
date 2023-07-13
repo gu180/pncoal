@@ -6,8 +6,10 @@
 typedef vector<TLorentzVector> particle;
 typedef vector<vector<TLorentzVector>> particles;
 
+	tag intag=vtag; //"he3";
+	tag outtag=vtag; //"he3";
 //tag dataname="./triton_draw.root";
-tag dataname=data_path+Form("draw_triton/triton_draw_%s.root", vtag.Data());
+tag dataname=data_path+Form("draw_triton/triton_draw_%s.root", intag.Data());
 
 TH2D* th2d_Nn_ratio;
 TH2D* th2d_Np_ratio;
@@ -16,6 +18,7 @@ TProfile* tp_Np_ratio;
 TProfile* tp_ratio_Nn;
 TH2D* th2d_Nn_Np;
 TH2D* th2d_Nd_Nt;
+TH2D* th2d_Nh_Nt;
 
 void SetH()
 {
@@ -27,6 +30,7 @@ void SetH()
 
 	th2d_Nn_Np=new TH2D("th2d_Nn_Np", "Np vs. Nn", 200,0,200, 200,0,200);
 	th2d_Nd_Nt=new TH2D("th2d_Nd_Nt", "Nt vs. Nd", 200,0,200, 200,0,200);
+	th2d_Nh_Nt=new TH2D("th2d_Nh_Nt", "Nt vs. Nh", 200,0,200, 200,0,200);
 	
 }
 
@@ -39,6 +43,7 @@ void LoadH(TFile* input)
 	tp_Np_ratio=(TProfile*) input->Get("tp_Np_ratio");
 	th2d_Nn_Np=(TH2D*) input->Get("th2d_Nn_Np");
 	th2d_Nd_Nt=(TH2D*) input->Get("th2d_Nd_Nt");
+	th2d_Nh_Nt=(TH2D*) input->Get("th2d_Nh_Nt");
 }
 
 void WriteH(TFile* output)
@@ -52,13 +57,14 @@ void WriteH(TFile* output)
 
 	th2d_Nn_Np->Write();
 	th2d_Nd_Nt->Write();
+	th2d_Nh_Nt->Write();
 }
 
 void tritondata()
 {
 	SetH();
 
-	tag in=getfilename_triton(vtag,"");
+	tag in=getfilename_triton(outtag,"");
 	
 	TFile* input=TFile::Open(in);
 	if(input==NULL){cout<<"Can't find "<< in <<endl; return;}
@@ -66,6 +72,7 @@ void tritondata()
 	TTree* tree_nucleons=(TTree*) input->Get("tree_nucleons_output");
 	TTree* tree_deuterons=(TTree*) input->Get("tree_deuterons");
 	TTree* tree_tritons=(TTree*) input->Get("tree_tritons");
+	TTree* tree_heliums=(TTree*) input->Get("tree_heliums");
 
 	
 	TTreeReader reader_nucleon(tree_nucleons);
@@ -80,6 +87,8 @@ void tritondata()
 
 	TTreeReader reader_triton(tree_tritons);
 	TTreeReaderValue<vector<vector<TLorentzVector>>> tritons(reader_triton, "tritons");
+	TTreeReader reader_helium(tree_heliums);
+	TTreeReaderValue<vector<vector<TLorentzVector>>> heliums(reader_helium, "heliums");
 	
 	int event_N=0;
 	
@@ -97,6 +106,7 @@ void tritondata()
 		reader_nucleon.SetEntry(i_event);
 		reader_deuteron.SetEntry(i_event);
 		reader_triton.SetEntry(i_event);
+		reader_helium.SetEntry(i_event);
 
 		int N_p=protons->size();
 		int N_n=neutrons->size();
@@ -115,6 +125,7 @@ void tritondata()
 		particles neutrons_free;
 		particles deuterons_free;
 		particles tritons_free;
+		particles heliums_free;
 		
 		
 		for(int i=0; i<deuterons->size(); ++i)
@@ -147,8 +158,15 @@ void tritondata()
 			if(used_==0){tritons_free.push_back(triton);}
 		}
 		
+		for(int i=0; i<heliums->size(); ++i)
+		{
+			particle helium=heliums->at(i);	
+			bool used_=0;
+			if(used_==0){heliums_free.push_back(helium);}
+		}
 		
 		int N_t_free=tritons_free.size();
+		int N_h_free=heliums_free.size();
 		int N_d_free=deuterons_free.size();
 		int N_p_free=protons_free.size();
 		int N_n_free=neutrons_free.size();
@@ -164,6 +182,7 @@ void tritondata()
 #endif
 		th2d_Nn_Np->Fill(N_n_free, N_p_free);
 		th2d_Nd_Nt->Fill(N_d_free, N_t_free);
+		th2d_Nh_Nt->Fill(N_h_free, N_t_free);
 
 		if(N_d_free==0){cout<<"No deuteron, skip"<<endl; continue;}
 
@@ -204,6 +223,7 @@ void Draw_th2d(tag op)
 	Draw_th2d(th2d_Nn_ratio, op+"th2d_Nn_ratio.pdf", "Nn", "ratio", vals{0,30,0,10});
 	Draw_th2d(th2d_Nn_Np, op+"th2d_Nn_Np.pdf", "Nn", "Np", vals{0,30,0,30});
 	Draw_th2d(th2d_Nd_Nt, op+"th2d_Nd_Nt.pdf", "Nd", "Nt", vals{0,30,0,30});
+	Draw_th2d(th2d_Nh_Nt, op+"th2d_Nh_Nt.pdf", "Nh", "Nt", vals{0,30,0,30});
 }
 
 void DrawTp(TProfile* tpin, tag xt, tag yt, tag on, vals range=vals(0))
@@ -241,7 +261,7 @@ void tritondraw()
 {
 	TFile* input=TFile::Open(dataname);
 	LoadH(input);
-	tag op=plot_path+vtag+"/";
+	tag op=plot_path+outtag+"/";
 	MakeDir(op);
 	Draw_th2d(op);
 	Draw_tp(op);

@@ -20,10 +20,19 @@ TH2D* th2d_Nn_Np;
 TH2D* th2d_Nd_Nt;
 TH2D* th2d_Nh_Nt;
 
+
+tags Nnames{"Nn", "Np", "Nd", "Nh", "Nt"};
+tags Rnames{"ratio0", "ratio1"};
+tags Ntitles{"N_{neutron}", "N_{proton}", "N_{deuteron}", "N_{He3}", "N_{triton}"};
+tags Rtitles{"N_{h}N_{n}/N_{d}^{2}", "N_{t}N_{p}/N_{d}^{2}"};//ratio names
+
+TH2D* th2ds_ratio[5][2];
 TH2D* th2ds[5][5];//Nn,Np,Nd,Nh,Nt
-TProfile* tps[5][2];//Nn,Np,Nd,Nh,Nt, ; ratio_NtNp/Nd^2, ratio_NhNn/Nd^2
-int Ns[5];//Nn, Np, Nd, Nh, Nt,
-int Ns_free[5];//Nn, Np, Nd, Nh, Nt,
+TProfile* tps[5][2];//Nn,Np,Nd,Nh,Nt ; ratio_NhNn/Nd^2,ratio_NtNp/Nd^2
+int Ns[5];//Nn, Np, Nd, Nh, Nt
+int Ns_free[5];//Nn, Np, Nd, Nh, Nt
+double ratios[2];//ratio_NhNn/Nd^2, ratio_NtNp/Nd^2
+
 void SetNs(int Nn_, int Np_, int Nd_, int Nh_, int Nt_)
 {
 	Ns[0]=Nn_;
@@ -40,11 +49,75 @@ void SetNsFree(int Nn_, int Np_, int Nd_, int Nh_, int Nt_)
 	Ns_free[2]=Nd_;
 	Ns_free[3]=Nh_;
 	Ns_free[4]=Nt_;
+
 }
 
+tag GetHname(tag adtag, int i, int j, tag typetag="hname")
+{
+	tag hname;
+	tag htitle;
+	if(adtag=="th2ds")
+	{
+		tag xname=Nnames[i];
+		tag yname=Nnames[j];
+		tag xtitle=Ntitles[i];
+		tag ytitle=Ntitles[j];
+		hname=Form("th2d_%s_%s",xname.Data(), yname.Data());
+		htitle=Form("%s vs. %s", ytitle.Data(), xtitle.Data());
+	}
+	if(adtag=="th2ds_ratio")
+	{
+		tag xname=Nnames[i];
+		tag yname=Rnames[j];
+		tag xtitle=Ntitles[i];
+		tag ytitle=Rtitles[j];
+		hname=Form("th2d_%s_%s",xname.Data(), yname.Data());
+		htitle=Form("%s vs. %s", ytitle.Data(), xtitle.Data());
+	}
+	if(adtag=="tps")
+	{
+		tag xname=Nnames[i];
+		tag yname=Rnames[j];
+		tag xtitle=Ntitles[i];
+		tag ytitle=Rtitles[j];
+		hname=Form("tp_%s_%s",xname.Data(), yname.Data());
+		htitle=Form("<%s> vs. %s", ytitle.Data(), xtitle.Data());
+	}
+
+	if(typetag=="hname"){return hname;}
+	if(typetag=="htitle"){return htitle;}
+		
+}
+
+		
 	
 void SetH()
 {
+	for(int i=0; i<5; ++i)
+	{
+		for(int j=0; j<5; ++j)
+		{
+			tag hname =GetHname("th2ds", i, j, "hname");
+			tag htitle=GetHname("th2ds", i, j, "htitle");
+			th2ds[i][j]=new TH2D(hname, htitle, 200,0,200, 200,0,200);
+		}
+	
+		for(int j=0; j<2; ++j)
+		{
+			tag hname =GetHname("th2ds_ratio", i, j, "hname");
+			tag htitle=GetHname("th2ds_ratio", i, j, "htitle");
+			th2ds_ratio[i][j]=new TH2D(hname, htitle, 200,0,200, 10000,0,200);
+		}
+
+		for(int j=0; j<2; ++j)
+		{
+			tag hname =GetHname("tps", i, j, "hname");
+			tag htitle=GetHname("tps", i, j, "htitle");
+			tps[i][j]=new TProfile(hname, htitle, 200,0,200);
+		}
+			
+	}
+
 	/*
 	th2d_Nn_ratio=new TH2D("th2d_ratio","ratio vs. Nn", 200,0,200, 100000,0,10);
 	th2d_Np_ratio=new TH2D("th2d_ratio","ratio vs. Np", 200,0,200, 100000,0,10);
@@ -62,6 +135,25 @@ void SetH()
 void CleanH()
 {
 	
+
+	for(int i=0; i<5; ++i)
+	{
+		for(int j=0; j<5; ++j)
+		{
+			delete th2ds[i][j];
+		}
+	
+		for(int j=0; j<2; ++j)
+		{
+			delete th2ds_ratio[i][j];
+		}
+
+		for(int j=0; j<2; ++j)
+		{
+			delete tps[i][j];
+		}
+			
+	}
 	/*
 	delete th2d_Nn_ratio;
 	delete th2d_Np_ratio;
@@ -77,6 +169,8 @@ void CleanH()
 
 void LoadH(TFile* input)
 {
+cout<<"LoadH "<<input->GetName()<<endl;
+	/*
 	th2d_Nn_ratio=(TH2D*) input->Get("th2d_Nn_ratio");
 	th2d_Np_ratio=(TH2D*) input->Get("th2d_Np_ratio");
 	tp_ratio_Nn=(TProfile*) input->Get("tp_ratio_Nn");
@@ -85,21 +179,91 @@ void LoadH(TFile* input)
 	th2d_Nn_Np=(TH2D*) input->Get("th2d_Nn_Np");
 	th2d_Nd_Nt=(TH2D*) input->Get("th2d_Nd_Nt");
 	th2d_Nh_Nt=(TH2D*) input->Get("th2d_Nh_Nt");
+	*/
+	for(int i=0; i<5; ++i)
+	{
+		for(int j=0; j<5; ++j)
+		{
+			tag hname =GetHname("th2ds", i, j, "hname");
+			th2ds[i][j]=(TH2D*) input->Get(hname);
+		}
+	
+		for(int j=0; j<2; ++j)
+		{
+			tag hname =GetHname("th2ds_ratio", i, j, "hname");
+			th2ds_ratio[i][j]=(TH2D*) input->Get(hname);
+		}
+
+		for(int j=0; j<2; ++j)
+		{
+			tag hname =GetHname("tps", i, j, "hname");
+			tps[i][j]=(TProfile*) input->Get(hname);
+		}
+			
+	}
+
 }
 
 void WriteH(TFile* output)
 {
-	output->cd();
-	th2d_Nn_ratio->Write("th2d_Nn_ratio");
-	th2d_Np_ratio->Write("th2d_Np_ratio");
-	tp_Nn_ratio->Write();
-	tp_Np_ratio->Write();
-	tp_ratio_Nn->Write();
 
-	th2d_Nn_Np->Write();
-	th2d_Nd_Nt->Write();
-	th2d_Nh_Nt->Write();
+	for(int i=0; i<5; ++i)
+	{
+		for(int j=0; j<5; ++j)
+		{
+			th2ds[i][j]->Write();
+		}
+	
+		for(int j=0; j<2; ++j)
+		{
+			th2ds_ratio[i][j]->Write();
+		}
+
+		for(int j=0; j<2; ++j)
+		{
+			tps[i][j]->Write();
+		}
+			
+	}
 }
+
+void FillH()
+{
+	
+	int Nd_free=Ns_free[2];
+
+	int Nn_=Ns_free[0];
+	int Np_=Ns_free[1];
+	int Nd_=Ns_free[2];
+	int Nh_=Ns_free[3];
+	int Nt_=Ns_free[4];
+
+	if(Nd_free!=0)
+	{
+		ratios[0]=Nh_*Nn_/(Nd_*Nd_);
+		ratios[1]=Nt_*Np_/(Nd_*Nd_);
+	}
+
+	for(int i=0; i<5; ++i)
+	{
+		for(int j=0; j<5; ++j)
+		{
+			th2ds[i][j]->Fill(Ns_free[i], Ns_free[j]);
+		}
+	
+		for(int j=0; j<2; ++j)
+		{
+			if(Nd_free!=0){th2ds_ratio[i][j]->Fill(Ns_free[i], ratios[j]);}
+		}
+
+		for(int j=0; j<2; ++j)
+		{
+			if(Nd_free!=0){tps[i][j]->Fill(Ns_free[i], ratios[j]);}
+		}
+			
+	}
+}
+
 
 void tritondata()
 {
@@ -211,6 +375,8 @@ void tritondata()
 		int N_d_free=deuterons_free.size();
 		int N_p_free=protons_free.size();
 		int N_n_free=neutrons_free.size();
+		SetNsFree(N_n_free, N_p_free, N_d_free, N_h_free, N_t_free);
+		FillH();
 		
 		//double ratio=double(N_t)*double(N_p)/double(N_d*N_d);
 
@@ -221,12 +387,10 @@ void tritondata()
 		cout<<"N_d="<<N_d<<" N_d_free="<<N_d_free<<endl;
 		cout<<"N_t="<<N_t<<" N_t_free="<<N_t_free<<endl;
 #endif
-		th2d_Nn_Np->Fill(N_n_free, N_p_free);
-		th2d_Nd_Nt->Fill(N_d_free, N_t_free);
-		th2d_Nh_Nt->Fill(N_h_free, N_t_free);
 
 		if(N_d_free==0){cout<<"No deuteron, skip"<<endl; continue;}
 
+		/*
 		double ratio=double(N_t_free)*double(N_p_free)/double(N_d_free*N_d_free);
 		th2d_Nn_ratio->Fill(N_n_free, ratio);
 		tp_Nn_ratio->Fill(N_n_free, ratio);
@@ -234,6 +398,7 @@ void tritondata()
 
 		th2d_Np_ratio->Fill(N_p_free, ratio);
 		tp_Np_ratio->Fill(N_p_free, ratio);
+		*/
 		
 	}
 
@@ -250,7 +415,7 @@ void tritondata()
 void Draw_th2d(TH2D * th2d_input, tag on, tag xt, tag yt, vals range=vals(0))
 {
 	TCanvas c("c","c");
-	th2d_input->RebinY(1000);
+	//th2d_input->RebinY(1000);
 	th2d_input->GetYaxis()->SetRangeUser(range[2], range[3]);
 	th2d_input->GetXaxis()->SetRangeUser(range[0], range[1]);
 	th2d_input->GetXaxis()->SetTitle(xt);
@@ -259,14 +424,6 @@ void Draw_th2d(TH2D * th2d_input, tag on, tag xt, tag yt, vals range=vals(0))
 	c.SaveAs(on);
 }
 
-void Draw_th2d(tag op)
-{
-	Draw_th2d(th2d_Np_ratio, op+"th2d_Np_ratio.pdf", "Np", "ratio", vals{0,30,0,10});
-	Draw_th2d(th2d_Nn_ratio, op+"th2d_Nn_ratio.pdf", "Nn", "ratio", vals{0,30,0,10});
-	Draw_th2d(th2d_Nn_Np, op+"th2d_Nn_Np.pdf", "Nn", "Np", vals{0,30,0,30});
-	Draw_th2d(th2d_Nd_Nt, op+"th2d_Nd_Nt.pdf", "Nd", "Nt", vals{0,30,0,30});
-	Draw_th2d(th2d_Nh_Nt, op+"th2d_Nh_Nt.pdf", "Nh", "Nt", vals{0,30,0,30});
-}
 
 void DrawTp(TProfile* tpin, tag xt, tag yt, tag on, vals range=vals(0))
 {
@@ -284,6 +441,39 @@ void DrawTp(TProfile* tpin, tag xt, tag yt, tag on, vals range=vals(0))
 	if(range.size()>=2 and range[0]<range[1]){tpin->GetXaxis()->SetRangeUser(range[0], range[1]);}
 	if(range.size()>=4 and range[2]<range[3]){tpin->GetYaxis()->SetRangeUser(range[2], range[3]);}
 	c.SaveAs(on);
+}
+
+void DrawH(tag op)
+{
+	for(int i=0; i<5; ++i)
+	{
+		for(int j=0; j<5; ++j)
+		{
+			tag hname=GetHname("th2ds", i, j);
+			cout<<"Draw th2ds i="<<i<<" j="<<j<<" hname="<<hname<<endl;
+			Draw_th2d(th2ds[i][j], op+hname+".pdf", Ntitles[i], Ntitles[j], vals{0,30,0,30});
+		}
+	
+		for(int j=0; j<2; ++j)
+		{
+			tag hname=GetHname("th2ds_ratio", i, j);
+			cout<<"Draw th2ds_ratio i="<<i<<" j="<<j<<" hname="<<hname<<endl;
+			Draw_th2d(th2ds_ratio[i][j], op+hname+".pdf", Ntitles[i], Rtitles[j], vals{0,30,0,10});
+			
+		}
+
+		for(int j=0; j<2; ++j)
+		{
+			tag xname=Ntitles[i];
+			tag yname=Rtitles[j];
+			tag ytitle=Form("<%s>", yname.Data());
+			tag hname=GetHname("tps", i, j);
+			cout<<"Draw tps i="<<i<<" j="<<j<<" hname="<<hname<<endl;
+			tag htitle=GetHname("tps", i, j, "title");
+			DrawTp(tps[i][j], xname, ytitle, op+Form("%s.pdf", hname.Data()));
+		}
+			
+	}
 }
 
 void Draw_tp(tag op)
@@ -305,8 +495,7 @@ void tritondraw()
 	LoadH(input);
 	tag op=plot_path+outtag+"/";
 	MakeDir(op);
-	Draw_th2d(op);
-	Draw_tp(op);
+	DrawH(op);
 	
 	delete input;
 	
@@ -317,6 +506,6 @@ void DrawTriton(tag intag_="he3", tag outtag_="he3")
 	outtag=outtag_;
 	//dataname=data_path+Form("draw_triton/triton_draw_%s.root", intag.Data());
 	dataname=getfilename_drawtriton(intag);
-	tritondata();
+	//tritondata();
 	tritondraw();
 }

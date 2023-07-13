@@ -3,6 +3,9 @@
 #include "./version.h"
 #include "/home/gu180/utility/vector_ut.h"
 
+tag intag=vtag;
+tag outtag=vtag; //"he3";
+
 void GetTriton()
 {
 	gROOT->ProcessLine(".L loader.C+");	
@@ -14,7 +17,7 @@ void GetTriton()
 
 
 	//---------------------------
-	tag in=getfilename_deuteron(vtag, "");
+	tag in=getfilename_deuteron(intag, "");
 	TFile* input=TFile::Open(in);
 	TTree* tree_nucleons= (TTree*) input->Get("tree_nucleons");
 	TTree* tree_deuterons= (TTree*) input->Get("tree_deuterons");
@@ -30,7 +33,7 @@ void GetTriton()
 
 	//---------------------------
 	//---------------------------
-	tag on=getfilename_triton(vtag, "");
+	tag on=getfilename_triton(outtag, "");
 	MakeDir(on);
 	TFile* output=TFile::Open(on, "recreate");
 	//---------------------------
