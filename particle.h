@@ -7,17 +7,17 @@ private:
 	int pid;
 	TLorentzVector r;
 	TLorentzVector p;
-	int used;
+	bool free;
 public:
 	int GetPid();
 	TLorentzVector GetR();
 	TLorentzVector GetP();
-	int GetUsed();
+	bool IsFree();
 	
 	void SetPid(int pid_in);
 	void SetR(TLorentzVector r_in);
 	void SetP(TLorentzVector p_in);
-	void SetUsed(int used_in);
+	void SetFree(int used_in);
 	
 };
 
@@ -25,7 +25,7 @@ public:
 class particles
 {
 private;
-	vector<particle> vec_particles;
+	//vector<particle> vec_particles;
 	
 	vector<int> pids;
 	vector<TLorentzVector> rs;

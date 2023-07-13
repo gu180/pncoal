@@ -45,4 +45,10 @@ name getfilename_triton(tag vtag, tag adtag)
 {
 	return data_path+"triton/"+Form("triton_%s%s.root", vtag.Data(), adtag.Data());
 }
+
+name getfilename_drawtriton(tag vtag)
+{
+	return data_path+Form("draw_triton/triton_draw_%s.root", vtag.Data());
+}
+
 #endif
