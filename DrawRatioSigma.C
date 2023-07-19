@@ -1,8 +1,13 @@
 #include "/home/gu180/utility/vector_ut.h"
+#include "/home/gu180/utility/tstring_ut.h"
 #include "./filename_pncoal.h"
 #include "/home/gu180/utility/gr_operator_ut.h"
 #include "./DrawTriton.h"
 #include "/home/gu180/utility/draw_object_ut.h"
+
+tag gAdtag="v10";
+vals gSigmas{0, 1 , 2, 3, 4, 5, 6, 7, 8, 9 ,10, 11, 12, 13, 14};
+vals gSigmas_err(100,0);
 
 vector<double> GetRatio(double sigma_proton, double sigma_neutron, int idx_ratio, tag adtag)
 {
@@ -96,9 +101,8 @@ TH2D GetTH2DRatio(vals sigmas, int idx_ratio, tag adtag)
 
 void DrawTH2DRatio(int idx_ratio)
 {
-	tag adtag="v6";
-	vals sigmas{0,1,2,3,4,5,6};
-	TH2D h=GetTH2DRatio(sigmas, idx_ratio, adtag);
+	tag adtag=gAdtag;
+	TH2D h=GetTH2DRatio(gSigmas, idx_ratio, adtag);
 	TCanvas c("c","c");
 	PlotStyleTCanvas(c);
 	h.Draw("lego");
@@ -119,29 +123,36 @@ void DrawTH2DRatio()
 	
 void DrawRS()
 {
-	tag adtag="v6";
-	vals sigmas{0,1,2,3,4,5,6};
-	vals sigmas_err(7,0);
+	tag adtag=gAdtag;//"v7";
+	//vals sigmas{0,1,2,3,4,5,6};
+	//tags pnames{"neutron", "proton"};
+	tags pnames{"total"};
+	
+	vals sigmas=gSigmas;
+	vals sigmas_err=gSigmas_err;
 
-	for(int idx_N=0; idx_N<2; ++idx_N)
+	for(int idx_N=0; idx_N<1; ++idx_N)
 	{
-	tags pnames{"neutron", "proton"};
 	for(int idx_ratio=0; idx_ratio<2; ++idx_ratio)
 	{
 
 	vector<gr> grs_rs;
+	vector<TF1> tf1s_rs;
 	tags labels;	
+	tags labels_fit;	
 	tag on=plot_path+Form("%s/%s_vs_sigma_%s.pdf", adtag.Data(), Rnames[idx_ratio].Data(), pnames[idx_N].Data());
+	tag on_fit=plot_path+Form("%s/%s_vs_sigma_%s_withfits.pdf", adtag.Data(), Rnames[idx_ratio].Data(), pnames[idx_N].Data());
 	MakeDir(on);
 
-	for(int i=0; i<7; ++i)
+	for(int i=0; i<1; ++i)
 	{
 		double sigma1=sigmas[i];
-		labels.push_back(Form("#sigma_{%s}=%.1f", pnames[1-idx_N].Data(), sigma1));
+		//labels.push_back(Form("#sigma_{%s}=%.1f", pnames[1-idx_N].Data(), sigma1));
+		labels.push_back(Form("#sigma_{%s}=%.1f", pnames[idx_N].Data(), sigma1));
 
 		vals ratio_vals;
 		vals ratio_errs;
-		for(int j=0; j<7; ++j)
+		for(int j=0; j<sigmas.size(); ++j)
 		{
 			double sigma2=sigmas[j];
 			vector<double> ratio;
@@ -151,10 +162,19 @@ void DrawRS()
 			ratio_errs.push_back(ratio[1]);
 		}
 		gr gr_rs=GetGrObj(sigmas, ratio_vals, sigmas_err, ratio_errs);
+		TF1 tf1_rs("tf1_rs", "pol1", 0, 10);
+		gr_rs.Fit(&tf1_rs);
+		double slope_val=tf1_rs.GetParameter(1);
+		double slope_err=tf1_rs.GetParError(1);
+		//labels_fit.push_back(Form("%s, slope=%s",labels[i].Data(), ValErr(slope_val, slope_err).Data()));
+		labels_fit.push_back(Form("slope=%s", ValErr(slope_val, slope_err).Data()));
+	
 		grs_rs.push_back(gr_rs);
+		tf1s_rs.push_back(tf1_rs);
 	}
 
 	DrawGrs(grs_rs, labels, on, Form("#sigma_{%s}",pnames[idx_N].Data()), Rtitles[idx_ratio]);
+	DrawGrsFits(grs_rs, tf1s_rs, labels_fit, on_fit, Form("#sigma_{%s}",pnames[idx_N].Data()), Rtitles[idx_ratio],"","", vals{0,15,0,10});
 	
 	}
 	}
@@ -163,6 +183,6 @@ void DrawRS()
 void DrawRatioSigma()
 {
 	
-	//DrawRS();
+	DrawRS();
 	DrawTH2DRatio();
 }

@@ -88,6 +88,11 @@ void GetDeuteron(tag intag, tag outtag)//This example shows the integral to calc
 					//TLorentzVector r_deuteron=result.r_center;
 					TLorentzVector r_deuteron=result.r_lab;
 					TLorentzVector p_deuteron=proton[1]+neutron[1];
+#ifdef DEBUGMODE
+cout<<"Wigner proton[1]:"; proton[1].Print();
+cout<<"Wigner neutron[1]:"; neutron[1].Print();
+#endif
+					
 					vector<TLorentzVector> deuteron{r_deuteron, p_deuteron};
 					deuterons.push_back(deuteron);
 					

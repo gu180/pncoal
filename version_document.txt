@@ -1,0 +1,17 @@
+
+v8
+phi distribution fixed, it was Uniform(-pi, -pi), should be Uniform(-pi, pi)
+Wigner function, use pass by value, instead of pass by reference, so that 
+the p_hadron_lab=p_proton_lab+p_neutron_lab is correct, otherwise,
+both p_proton_lab and p_neutron_lab are boosted into the center frame within the wigner function.
+
+
+v9
+dN/dpt ~ pT*exp(-pT/T)
+
+
+v10
+The extra N should be gRandom->Gaus(0, sigma), instead of gRandom->Gaus(sigma);
+
+v11
+The position of center of mass, the mass is replaced by E/c^2, i.e. E() function in the code, it was M() function, which is the rest mass

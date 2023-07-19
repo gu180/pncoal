@@ -21,10 +21,13 @@ struct WignerResult
 	double wigner_val;
 	TLorentzVector r_center;
 	TLorentzVector r_lab;
+	TLorentzVector p_lab;
 };
 
-WignerResult wignerfunction(vector<TLorentzVector> &a, vector<TLorentzVector> &b, double sigma_r, double sigma_p)
+//WignerResult wignerfunction(vector<TLorentzVector> &a, vector<TLorentzVector> &b, double sigma_r, double sigma_p)
+WignerResult wignerfunction(vector<TLorentzVector> a, vector<TLorentzVector> b, double sigma_r, double sigma_p)
 {
+	TLorentzVector p_hadron_lab=a[1]+b[1];
 	//if(1)//boost to the center of mass frame of particle a and b.
 	{
 	}
@@ -44,8 +47,10 @@ WignerResult wignerfunction(vector<TLorentzVector> &a, vector<TLorentzVector> &b
 
 	position_a=position_a+(tf-t1)*velocity_a;
 	position_b=position_b+(tf-t2)*velocity_b;
-	double mass_a=a[1].M();
-	double mass_b=b[1].M();
+	//double mass_a=a[1].M();
+	//double mass_b=b[1].M();
+	double mass_a=a[1].E();
+	double mass_b=b[1].E();
 	double mass_center=mass_a+mass_b;
 	
 	double part_a=mass_a/mass_center;
@@ -69,6 +74,7 @@ cout<<"r_hadron_lab "; r_hadron_lab.Print();
 	WignerResult output;
 	output.r_center=r_hadron_center;
 	output.r_lab=r_hadron_lab;
+	output.p_lab=p_hadron_lab;
 
 	TVector3 deltar=position_a - position_b;
 	TVector3 deltap=a[1].Vect()-b[1].Vect();

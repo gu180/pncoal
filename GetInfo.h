@@ -1,3 +1,5 @@
+#ifndef GETINFO_H_
+#define GETINFO_H_
 #include "./filename_pncoal.h"
 #include "/home/gu180/utility/draw_object_ut.h"
 #include "/home/gu180/utility/tf1_ut.h"
@@ -6,10 +8,6 @@
 typedef vector<TLorentzVector> particle;
 typedef vector<vector<TLorentzVector>> particles;
 
-	tag intag; //"he3";
-	tag outtag; //"he3";
-//tag dataname="./triton_draw.root";
-tag dataname=data_path+Form("draw_triton/triton_draw_%s.root", intag.Data());
 
 TH2D* th2d_Nn_ratio;
 TH2D* th2d_Np_ratio;
@@ -109,6 +107,17 @@ void SetH()
 {
 	for(int i=0; i<5; ++i)
 	{
+		{
+			tag hname, htitle;
+			hname=Form("th1d_%s", Nnames[i].Data());
+			htitle=Form("distribution of %s (total)", Ntitles[i].Data());
+			th1d_Ns[i][0]=new TH1D(hname,htitle, 200,0,200);
+
+			hname=Form("th1d_%s_free", Nnames[i].Data());
+			htitle=Form("distribution of %s (free)", Ntitles[i].Data());
+			th1d_Ns[i][1]=new TH1D(hname,htitle, 200,0,200);
+		}
+
 		for(int j=0; j<5; ++j)
 		{
 			tag hname =GetHname("th2ds", i, j, "hname");
@@ -152,6 +161,8 @@ void CleanH()
 
 	for(int i=0; i<5; ++i)
 	{
+		delete th1d_Ns[i][0];
+		delete th1d_Ns[i][1];
 		for(int j=0; j<5; ++j)
 		{
 			delete th2ds[i][j];
@@ -196,6 +207,8 @@ cout<<"LoadH "<<input->GetName()<<endl;
 	*/
 	for(int i=0; i<5; ++i)
 	{
+		th1d_Ns[i][0]=(TH1D*) input->Get(Form("th1d_%s", Nnames[i].Data()));
+		th1d_Ns[i][1]=(TH1D*) input->Get(Form("th1d_%s_free", Nnames[i].Data()));
 		for(int j=0; j<5; ++j)
 		{
 			tag hname =GetHname("th2ds", i, j, "hname");
@@ -223,6 +236,8 @@ void WriteH(TFile* output)
 
 	for(int i=0; i<5; ++i)
 	{
+		th1d_Ns[i][0]->Write();
+		th1d_Ns[i][1]->Write();
 		for(int j=0; j<5; ++j)
 		{
 			th2ds[i][j]->Write();
@@ -260,6 +275,8 @@ void FillH()
 
 	for(int i=0; i<5; ++i)
 	{
+		th1d_Ns[i][0]->Fill(Ns[i]);
+		th1d_Ns[i][1]->Fill(Ns_free[i]);
 		for(int j=0; j<5; ++j)
 		{
 			th2ds[i][j]->Fill(Ns_free[i], Ns_free[j]);
@@ -279,7 +296,7 @@ void FillH()
 }
 
 
-void GetInfo(tag inif, tag onif)//if infunction
+void GetInfoByFn(tag inif, tag onif)//if infunction
 {
 	SetH();
 
@@ -287,7 +304,7 @@ void GetInfo(tag inif, tag onif)//if infunction
 	
 	
 	TFile* input=TFile::Open(inif);
-	if(input==NULL){cout<<"Can't find "<< inif <<endl; return;}
+	if(input==NULL){cout<<"Can't find "<< inif<<endl; return;}
 	
 	TTree* tree_nucleons=(TTree*) input->Get("tree_nucleons_output");
 	TTree* tree_deuterons=(TTree*) input->Get("tree_deuterons");
@@ -431,107 +448,24 @@ void GetInfo(tag inif, tag onif)//if infunction
 	CleanH();
 }
 
-void tritondata()
+void GetInfoByTag(tag intag, tag outtag)
 {
-	tag in=getfilename_triton(outtag,"");
-	GetInfo(in, dataname);
+	tag in=getfilename_triton(intag,"");
+	tag on=getfilename_drawtriton(outtag);
+	GetInfoByFn(in, on);
 }
-	
 
-void Draw_th2d(TH2D * th2d_input, tag on, tag xt, tag yt, vals range=vals(0))
+void RunLocal()
 {
-	TCanvas c("c","c");
-	//th2d_input->RebinY(1000);
-	th2d_input->GetYaxis()->SetRangeUser(range[2], range[3]);
-	th2d_input->GetXaxis()->SetRangeUser(range[0], range[1]);
-	th2d_input->GetXaxis()->SetTitle(xt);
-	th2d_input->GetYaxis()->SetTitle(yt);
-	th2d_input->Draw("colz");
-	c.SaveAs(on);
 }
 
 
-void DrawTp(TProfile* tpin, tag xt, tag yt, tag on, vals range=vals(0))
+void GetInfo(tag intag_="he3", tag outtag_="he3")
 {
-	TF1 f("f", "[0]+[1]*x", -100,100);
-	tpin->Fit(&f);
-	TCanvas c(on, on);
-	tpin->Draw();
-	tpin->GetXaxis()->SetTitle(xt);
-	tpin->GetYaxis()->SetTitle(yt);
-	
-	TLegend leg(0.6,0.2,0.99,0.7);
-	leg.SetHeader(SplitLines(fpars(&f)));
-	leg.Draw("same");
-	
-	if(range.size()>=2 and range[0]<range[1]){tpin->GetXaxis()->SetRangeUser(range[0], range[1]);}
-	if(range.size()>=4 and range[2]<range[3]){tpin->GetYaxis()->SetRangeUser(range[2], range[3]);}
-	c.SaveAs(on);
+	cout<<"intag_="<<intag_<<endl;
+	cout<<"outtag_="<<outtag_<<endl;
+	GetInfoByTag(intag_, outtag_);
 }
 
-void DrawH(tag op)
-{
-	for(int i=0; i<5; ++i)
-	{
-		for(int j=0; j<5; ++j)
-		{
-			tag hname=GetHname("th2ds", i, j);
-			cout<<"Draw th2ds i="<<i<<" j="<<j<<" hname="<<hname<<endl;
-			Draw_th2d(th2ds[i][j], op+hname+".pdf", Ntitles[i], Ntitles[j], vals{0,30,0,30});
-		}
-	
-		for(int j=0; j<2; ++j)
-		{
-			tag hname=GetHname("th2ds_ratio", i, j);
-			cout<<"Draw th2ds_ratio i="<<i<<" j="<<j<<" hname="<<hname<<endl;
-			Draw_th2d(th2ds_ratio[i][j], op+hname+".pdf", Ntitles[i], Rtitles[j], vals{0,30,0,10});
-			
-		}
 
-		for(int j=0; j<2; ++j)
-		{
-			tag xname=Ntitles[i];
-			tag yname=Rtitles[j];
-			tag ytitle=Form("<%s>", yname.Data());
-			tag hname=GetHname("tps", i, j);
-			cout<<"Draw tps i="<<i<<" j="<<j<<" hname="<<hname<<endl;
-			tag htitle=GetHname("tps", i, j, "title");
-			DrawTp(tps[i][j], xname, ytitle, op+Form("%s.pdf", hname.Data()));
-		}
-			
-	}
-}
-
-void Draw_tp(tag op)
-{
-	tag on1=op+"tp_ratio_Nn.pdf";
-	DrawTp(tp_ratio_Nn, "ratio", "<Nn>", on1, vals{0,0.1});
-	tag on_n=op+"tp_Nn_ratio.pdf";
-	DrawTp(tp_Nn_ratio, "Nn", "<ratio>", on_n);
-
-	tag on_p=op+"tp_Np_ratio.pdf";
-	DrawTp(tp_Np_ratio, "Np", "<ratio>", on_p);
-	
-}
-	
-
-void tritondraw()
-{
-	TFile* input=TFile::Open(dataname);
-	LoadH(input);
-	tag op=plot_path+outtag+"/";
-	MakeDir(op);
-	DrawH(op);
-	
-	delete input;
-	
-}
-void DrawTriton(tag intag_="he3", tag outtag_="he3")
-{
-	intag=intag_;
-	outtag=outtag_;
-	//dataname=data_path+Form("draw_triton/triton_draw_%s.root", intag.Data());
-	dataname=getfilename_drawtriton(intag);
-	tritondata();
-	//tritondraw();
-}
+#endif

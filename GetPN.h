@@ -44,21 +44,22 @@ double random_r_z()//generate random position -> z
 double random_p_phi()//generate random momentum-> phi  Uniform distributed between -pi +pi;
 {
 	gRandom->SetSeed(0);
-	return gRandom->Uniform(-TMath::Pi(), -TMath::Pi());
+	return gRandom->Uniform(-TMath::Pi(), +TMath::Pi());
 }
 
 double random_p_pt()//generate rnadom momentum -> pt	(here is a cylindrical coordinate, z-axis is along the beam direction)
 							//This function will return a pt value with PDF as an expoential function  P(pt)=exp(-pt/10);
 {
 	gRandom->SetSeed(0);
-	double r_max=20; //set the maximum pT as 10 GeV, This is an occasional value for example.
+	double r_max=20; 
 	double x;
 	double y;
 	do
 	{
 		x=gRandom->Uniform(0, r_max);
 		y=gRandom->Uniform(0, r_max);
-	}while(exp(-x/(kTemprature))<y);
+	//}while(exp(-x/(kTemprature))<y);
+	}while(x*exp(-x/(kTemprature))<y);
 	//h_pt->Fill(x);
 	return x;
 }
@@ -87,7 +88,24 @@ vector<TLorentzVector> single_nucleon(int charge)
 	return particle;
 }
 
-void GetPN(tag outtag="debug", double Nsigma_proton=1, double Nsigma_neutron=1)
+vector<int> GetNumberPN(double Nsigma_total)
+{
+	//int Ntotal=gRandom->Poisson(40)+gRandom->Gaus(Nsigma_total);
+	int Ntotal=gRandom->Poisson(40)+gRandom->Gaus(0,Nsigma_total);
+	int Np=0;
+	int Nn=0;
+	for(int i=0; i<Ntotal; ++i)
+	{
+		if(gRandom->Integer(2)==0){Nn++;}
+		else{Np++;};
+	}
+
+	return vector<int>{Nn, Np};
+}
+	
+	
+
+void GetPN(tag outtag="debug", double Nsigma_proton=0, double Nsigma_neutron=0)
 {
 	gROOT->ProcessLine(".L loader.C+");	
 
@@ -122,11 +140,15 @@ void GetPN(tag outtag="debug", double Nsigma_proton=1, double Nsigma_neutron=1)
 
 	for(int i=0; i< Nevent; ++i)
 	{
-		int number_proton =gRandom->Poisson(20)+gRandom->Gaus(Nsigma_proton); //number of protons, here is just an exmaple
-		int number_neutron=gRandom->Poisson(20)+gRandom->Gaus(Nsigma_neutron);
+		int number_proton;// =gRandom->Poisson(20)+gRandom->Gaus(Nsigma_proton); //number of protons, here is just an exmaple
+		int number_neutron;//=gRandom->Poisson(20)+gRandom->Gaus(Nsigma_neutron);
 		cout<<"Event "<<i<<endl;
 		protons.clear();
 		neutrons.clear();
+	
+		vector<int> number_pn=GetNumberPN(Nsigma_proton+Nsigma_neutron);
+		number_proton=number_pn[0];
+		number_neutron=number_pn[1];
 
 		for(int j=0; j<number_proton; ++j)
 		{

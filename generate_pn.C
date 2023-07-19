@@ -40,7 +40,7 @@ double random_r_z()//generate random position -> z
 double random_p_phi()//generate random momentum-> phi  Uniform distributed between -pi +pi;
 {
 	gRandom->SetSeed(0);
-	return gRandom->Uniform(-TMath::Pi(), -TMath::Pi());
+	return gRandom->Uniform(-TMath::Pi(), +TMath::Pi());
 }
 
 double random_p_pt()//generate rnadom momentum -> pt	(here is a cylindrical coordinate, z-axis is along the beam direction)
