@@ -12,7 +12,7 @@ int Nevent=10000; //number of events
 
 //double Nsigma=2;
 
-//TH1D* h_pt;
+TH1D* h_pt;
 
 double random_r_phi()//generate random position-> phi
 {
@@ -60,7 +60,7 @@ double random_p_pt()//generate rnadom momentum -> pt	(here is a cylindrical coor
 		y=gRandom->Uniform(0, r_max);
 	//}while(exp(-x/(kTemprature))<y);
 	}while(x*exp(-x/(kTemprature))<y);
-	//h_pt->Fill(x);
+	h_pt->Fill(x);
 	return x;
 }
 
@@ -87,6 +87,10 @@ vector<TLorentzVector> single_nucleon(int charge)
 	particle.push_back(p);
 	return particle;
 }
+
+//vector<TLorentzVector> single_nucleon_withoutcollision(int charge, vector<vector<TLorentzVector>> &nucleons)
+
+
 
 vector<int> GetNumberPN(double Nsigma_total)
 {
@@ -117,7 +121,7 @@ void GetPN(tag outtag="debug", double Nsigma_proton=0, double Nsigma_neutron=0)
 	TTree* tree_nucleons=new TTree("tree_nucleons", "a tree to store nucleon information");
 	//TTree* tree_proton=new TTree("tree_proton", "a tree to store proton information");
 	//TTree* tree_neutron=new TTree("tree_neutron", "a tree to store neutron information");
-//h_pt=new TH1D("h_pt", "pt spectrum of protons", 100, 0, 10);
+h_pt=new TH1D("h_pt", "pt spectrum of protons", 100, 0, 10);
 
 
 	vector<vector<TLorentzVector>> protons;
@@ -140,15 +144,15 @@ void GetPN(tag outtag="debug", double Nsigma_proton=0, double Nsigma_neutron=0)
 
 	for(int i=0; i< Nevent; ++i)
 	{
-		int number_proton;// =gRandom->Poisson(20)+gRandom->Gaus(Nsigma_proton); //number of protons, here is just an exmaple
-		int number_neutron;//=gRandom->Poisson(20)+gRandom->Gaus(Nsigma_neutron);
+		int number_proton=gRandom->Poisson(20)+gRandom->Gaus(0,Nsigma_proton); //number of protons, here is just an exmaple
+		int number_neutron=gRandom->Poisson(20)+gRandom->Gaus(0,Nsigma_neutron);
 		cout<<"Event "<<i<<endl;
 		protons.clear();
 		neutrons.clear();
 	
-		vector<int> number_pn=GetNumberPN(Nsigma_proton+Nsigma_neutron);
-		number_proton=number_pn[0];
-		number_neutron=number_pn[1];
+		//vector<int> number_pn=GetNumberPN(Nsigma_proton+Nsigma_neutron);
+		//number_proton=number_pn[0];
+		//number_neutron=number_pn[1];
 
 		for(int j=0; j<number_proton; ++j)
 		{
@@ -169,10 +173,9 @@ void GetPN(tag outtag="debug", double Nsigma_proton=0, double Nsigma_neutron=0)
 	}
 
 	output->cd();
-	//h_pt->Write();
+	h_pt->Write();
 	output->Write();
 	output->Close();
-	//delete h_pt;
 	delete output;
 	//delete h_pt;
 }

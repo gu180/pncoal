@@ -174,7 +174,7 @@ void DrawRS()
 	}
 
 	DrawGrs(grs_rs, labels, on, Form("#sigma_{%s}",pnames[idx_N].Data()), Rtitles[idx_ratio]);
-	DrawGrsFits(grs_rs, tf1s_rs, labels_fit, on_fit, Form("#sigma_{%s}",pnames[idx_N].Data()), Rtitles[idx_ratio],"","", vals{0,15,0,10});
+	DrawGrsFits(grs_rs, tf1s_rs, labels_fit, on_fit, Form("#sigma_{%s}",pnames[idx_N].Data()), Rtitles[idx_ratio],"","", vals{0,15,0,1.2});
 	
 	}
 	}

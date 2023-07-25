@@ -15,3 +15,6 @@ The extra N should be gRandom->Gaus(0, sigma), instead of gRandom->Gaus(sigma);
 
 v11
 The position of center of mass, the mass is replaced by E/c^2, i.e. E() function in the code, it was M() function, which is the rest mass
+
+v12
+p, n sigma set separately

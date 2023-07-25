@@ -19,6 +19,7 @@ TH2D* th2d_Nd_Nt;
 TH2D* th2d_Nh_Nt;
 
 TH1D* th1d_Ns[5][2];//Nn, Np, Nd, Nh, Nt; total, free
+TH1D* th1d_pt[5][2];
 
 
 tags Nnames{"Nn", "Np", "Nd", "Nh", "Nt"};
