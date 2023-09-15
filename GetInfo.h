@@ -22,17 +22,27 @@ TH1D* th1d_Ns[5][2];//Nn, Np, Nd, Nh, Nt; total, free
 TH1D* th1d_pt[5][2];
 
 
-tags Nnames{"Nn", "Np", "Nd", "Nh", "Nt"};
-tags Rnames{"ratio0", "ratio1"};
-tags Ntitles{"N_{neutron}", "N_{proton}", "N_{deuteron}", "N_{He3}", "N_{triton}"};
-tags Rtitles{"N_{h}N_{n}/N_{d}^{2}", "N_{t}N_{p}/N_{d}^{2}"};//ratio names
 
-TH2D* th2ds_ratio[5][2];
+
+tags Nnames{"Nn", "Np", "Nd", "Nh", "Nt"};
+tags Rnames{"ratio0", "ratio1", "ratioNhNd", "ratioNtNd", "ratioNdNn", "ratioNdNp"};
+tags Ntitles{"N_{neutron}", "N_{proton}", "N_{deuteron}", "N_{He3}", "N_{triton}"};
+tags Rtitles{"N_{h}N_{n}/N_{d}^{2}", "N_{t}N_{p}/N_{d}^{2}", "N_{h}/N_{d}", "N_{t}/N_{d}", "N_{d}/N_{n}", "N_{d}/N_{p}"};//ratio names
+tags Rtitles_allevent{"<N_{h}><N_{n}>/<N_{d}>^{2}", "<N_{t}><N_{p}>/<N_{d}>^{2}", "<N_{h}>/<N_{d}>", "<N_{t}>/<N_{d}>", "<N_{d}>/<N_{n}>", "<N_{d}>/<N_{p}>"};//ratio names
+
+const int Nratio=6;
+TH2D* th2ds_ratio[5][Nratio];
 TH2D* th2ds[5][5];//Nn,Np,Nd,Nh,Nt
-TProfile* tps[5][2];//Nn,Np,Nd,Nh,Nt ; ratio_NhNn/Nd^2,ratio_NtNp/Nd^2
+TProfile* tps[5][Nratio];//Nn,Np,Nd,Nh,Nt ; ratio_NhNn/Nd^2,ratio_NtNp/Nd^2
 int Ns[5];//Nn, Np, Nd, Nh, Nt
 int Ns_free[5];//Nn, Np, Nd, Nh, Nt
-double ratios[2];//ratio_NhNn/Nd^2, ratio_NtNp/Nd^2
+double ratios[Nratio];//ratio_NhNn/Nd^2, ratio_NtNp/Nd^2, ratio_Nh/Nd, ratio_Nt/Nd, ratio_Nd/Nn, ratio_Nd/Np
+
+double Ns_allevent[5];//Nn, Np, Nd, Nh, Nt
+double Ns_free_allevent[5];//Nn, Np, Nd, Nh, Nt
+double Ns_free_allevent_err[5];//Nn, Np, Nd, Nh, Nt
+double ratios_allevent[Nratio];
+double ratios_allevent_err[Nratio];
 
 void SetNs(int Nn_, int Np_, int Nd_, int Nh_, int Nt_)
 {
@@ -106,8 +116,11 @@ tag GetHname(tag adtag, int i, int j, tag typetag="hname")
 	
 void SetH()
 {
+	
 	for(int i=0; i<5; ++i)
 	{
+		Ns_allevent[i]=0;
+		Ns_free_allevent[i]=0;
 		{
 			tag hname, htitle;
 			hname=Form("th1d_%s", Nnames[i].Data());
@@ -126,14 +139,14 @@ void SetH()
 			th2ds[i][j]=new TH2D(hname, htitle, 200,0,200, 200,0,200);
 		}
 	
-		for(int j=0; j<2; ++j)
+		for(int j=0; j<Nratio; ++j)
 		{
 			tag hname =GetHname("th2ds_ratio", i, j, "hname");
 			tag htitle=GetHname("th2ds_ratio", i, j, "htitle");
 			th2ds_ratio[i][j]=new TH2D(hname, htitle, 200,0,200, 10000,0,200);
 		}
 
-		for(int j=0; j<2; ++j)
+		for(int j=0; j<Nratio; ++j)
 		{
 			tag hname =GetHname("tps", i, j, "hname");
 			tag htitle=GetHname("tps", i, j, "htitle");
@@ -169,12 +182,12 @@ void CleanH()
 			delete th2ds[i][j];
 		}
 	
-		for(int j=0; j<2; ++j)
+		for(int j=0; j<Nratio; ++j)
 		{
 			delete th2ds_ratio[i][j];
 		}
 
-		for(int j=0; j<2; ++j)
+		for(int j=0; j<Nratio; ++j)
 		{
 			delete tps[i][j];
 		}
@@ -193,6 +206,18 @@ void CleanH()
 	
 }
 
+double ReadNum(TFile* input, TString numname)
+{
+	TVectorD a=*(TVectorD*) input->Get(numname);
+	return a[0];
+}
+
+double ReadNum(tag fn, tag numname)
+{
+	TFile input(fn);
+	return ReadNum(&input, numname);
+}
+
 void LoadH(TFile* input)
 {
 cout<<"LoadH "<<input->GetName()<<endl;
@@ -208,6 +233,9 @@ cout<<"LoadH "<<input->GetName()<<endl;
 	*/
 	for(int i=0; i<5; ++i)
 	{
+		Ns_allevent[i]=ReadNum(input, Nnames[i]);
+		Ns_free_allevent[i]=ReadNum(input, Nnames[i]+"_free");
+
 		th1d_Ns[i][0]=(TH1D*) input->Get(Form("th1d_%s", Nnames[i].Data()));
 		th1d_Ns[i][1]=(TH1D*) input->Get(Form("th1d_%s_free", Nnames[i].Data()));
 		for(int j=0; j<5; ++j)
@@ -216,13 +244,13 @@ cout<<"LoadH "<<input->GetName()<<endl;
 			th2ds[i][j]=(TH2D*) input->Get(hname);
 		}
 	
-		for(int j=0; j<2; ++j)
+		for(int j=0; j<Nratio; ++j)
 		{
 			tag hname =GetHname("th2ds_ratio", i, j, "hname");
 			th2ds_ratio[i][j]=(TH2D*) input->Get(hname);
 		}
 
-		for(int j=0; j<2; ++j)
+		for(int j=0; j<Nratio; ++j)
 		{
 			tag hname =GetHname("tps", i, j, "hname");
 			tps[i][j]=(TProfile*) input->Get(hname);
@@ -232,11 +260,61 @@ cout<<"LoadH "<<input->GetName()<<endl;
 
 }
 
+void WriteNum(TFile* output, double num, TString numname)
+{
+	TVectorD a(1);
+	a[0]=num;
+	output->cd();
+	a.Write(numname);
+}
+
+double GetErr_a(double x, double y, double z)
+{
+	double ex=sqrt(x)/x;
+	double ey=sqrt(y)/y;
+	double ez=sqrt(z)/z;
+	double r=x*y/(z*z);
+	double er=r*sqrt(ex*ex+ey*ey+4*ez*ez);
+	return er;
+}
+
+double GetErr_b(double x, double y)
+{
+	double ex=sqrt(x)/x;
+	double ey=sqrt(y)/y;
+	double r=x/y;
+	double er=r*sqrt(ex*ex+ey*ey);
+	return er;
+}
+
 void WriteH(TFile* output)
 {
+	
+	
+	{
+	//tags Nnames{"Nn", "Np", "Nd", "Nh", "Nt"};
+	//ratios[Nratio];//ratio_NhNn/Nd^2, ratio_NtNp/Nd^2, ratio_Nh/Nd, ratio_Nt/Nd, ratio_Nd/Nn, ratio_Nd/Np
+		double Nn=Ns_free_allevent[0];
+		double Np=Ns_free_allevent[1];
+		double Nd=Ns_free_allevent[2];
+		double Nh=Ns_free_allevent[3];
+		double Nt=Ns_free_allevent[4];
+		ratios_allevent[0]=Nh*Nn/(Nd*Nd); ratios_allevent_err[0]=GetErr_a(Nh,Nn, Nd);
+		ratios_allevent[1]=Nt*Np/(Nd*Nd); ratios_allevent_err[1]=GetErr_a(Nt,Np, Nd);
+		ratios_allevent[2]=Nh/Nd;ratios_allevent_err[2]=GetErr_b(Nh, Nd);
+		ratios_allevent[3]=Nt/Nd;ratios_allevent_err[3]=GetErr_b(Nt, Nd);
+		ratios_allevent[4]=Nd/Nn;ratios_allevent_err[4]=GetErr_b(Nd, Nn);
+		ratios_allevent[5]=Nd/Np;ratios_allevent_err[5]=GetErr_b(Nd, Np);
 
+		for(int i=0; i<Nratio; ++i){WriteNum(output, ratios_allevent[i], Rnames[i]);}
+		for(int i=0; i<Nratio; ++i){WriteNum(output, ratios_allevent_err[i], Rnames[i]+"_err");}
+	}
+	
 	for(int i=0; i<5; ++i)
 	{
+		
+		WriteNum(output, Ns_allevent[i], Nnames[i]);
+		WriteNum(output, Ns_free_allevent[i], Nnames[i]+"_free");
 		th1d_Ns[i][0]->Write();
 		th1d_Ns[i][1]->Write();
 		for(int j=0; j<5; ++j)
@@ -244,12 +322,12 @@ void WriteH(TFile* output)
 			th2ds[i][j]->Write();
 		}
 	
-		for(int j=0; j<2; ++j)
+		for(int j=0; j<Nratio; ++j)
 		{
 			th2ds_ratio[i][j]->Write();
 		}
 
-		for(int j=0; j<2; ++j)
+		for(int j=0; j<Nratio; ++j)
 		{
 			tps[i][j]->Write();
 		}
@@ -272,10 +350,18 @@ void FillH()
 	{
 		ratios[0]=Nh_*Nn_/(Nd_*Nd_);
 		ratios[1]=Nt_*Np_/(Nd_*Nd_);
+		ratios[2]=Nh_/Nd_;
+		ratios[3]=Nt_/Nd_;
 	}
+	if(Nn_!=0){ratios[4]=Nd_/Nn_;}
+	if(Np_!=0){ratios[5]=Nd_/Np_;}
 
 	for(int i=0; i<5; ++i)
 	{
+		Ns_allevent[i]+=Ns[i];
+		Ns_free_allevent[i]+=Ns_free[i];
+
+
 		th1d_Ns[i][0]->Fill(Ns[i]);
 		th1d_Ns[i][1]->Fill(Ns_free[i]);
 		for(int j=0; j<5; ++j)
@@ -283,14 +369,19 @@ void FillH()
 			th2ds[i][j]->Fill(Ns_free[i], Ns_free[j]);
 		}
 	
-		for(int j=0; j<2; ++j)
+		for(int j=0; j<Nratio; ++j)
 		{
-			if(Nd_free!=0){th2ds_ratio[i][j]->Fill(Ns_free[i], ratios[j]);}
+			if(Nd_free!=0 and j<4){th2ds_ratio[i][j]->Fill(Ns_free[i], ratios[j]);}
+			if(Nn_!=0 and j==4){th2ds_ratio[i][j]->Fill(Ns_free[i], ratios[j]);}
+			if(Np_!=0 and j==5){th2ds_ratio[i][j]->Fill(Ns_free[i], ratios[j]);}
+
 		}
 
-		for(int j=0; j<2; ++j)
+		for(int j=0; j<Nratio; ++j)
 		{
-			if(Nd_free!=0){tps[i][j]->Fill(Ns_free[i], ratios[j]);}
+			if(Nd_free!=0 and j<4){tps[i][j]->Fill(Ns_free[i], ratios[j]);}
+			if(Nn_!=0 and j==4){tps[i][j]->Fill(Ns_free[i], ratios[j]);}
+			if(Np_!=0 and j==5){tps[i][j]->Fill(Ns_free[i], ratios[j]);}
 		}
 			
 	}

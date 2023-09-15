@@ -11,6 +11,7 @@ void GetTriton(tag intag, tag outtag)
 	gROOT->ProcessLine(".L loader.C+");	
 
 	double sigma_r=1.59;
+	//double sigma_r=1.96;
 	double sigma_p=1/(5.068*sigma_r);
 
 	gRandom->SetSeed(0);

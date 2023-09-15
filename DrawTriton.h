@@ -24,16 +24,17 @@ TH1D* th1d_Ns[5][2];//Nn, Np, Nd, Nh, Nt; total, free
 
 
 tags Nnames{"Nn", "Np", "Nd", "Nh", "Nt"};
-tags Rnames{"ratio0", "ratio1"};
+tags Rnames{"ratio0", "ratio1", "ratioNhNd", "ratioNtNd", "ratioNdNn", "ratioNdNp"};
 tags Ntitles{"N_{neutron}", "N_{proton}", "N_{deuteron}", "N_{He3}", "N_{triton}"};
-tags Rtitles{"N_{h}N_{n}/N_{d}^{2}", "N_{t}N_{p}/N_{d}^{2}"};//ratio names
+tags Rtitles{"N_{h}N_{n}/N_{d}^{2}", "N_{t}N_{p}/N_{d}^{2}", "N_{h}/N_{d}", "N_{t}/N_{d}", "N_{d}/N_{n}", "N_{d}/N_{p}"};//ratio names
 
-TH2D* th2ds_ratio[5][2];
+const int Nratio=6;
+TH2D* th2ds_ratio[5][Nratio];
 TH2D* th2ds[5][5];//Nn,Np,Nd,Nh,Nt
-TProfile* tps[5][2];//Nn,Np,Nd,Nh,Nt ; ratio_NhNn/Nd^2,ratio_NtNp/Nd^2
+TProfile* tps[5][Nratio];//Nn,Np,Nd,Nh,Nt ; ratio_NhNn/Nd^2,ratio_NtNp/Nd^2
 int Ns[5];//Nn, Np, Nd, Nh, Nt
 int Ns_free[5];//Nn, Np, Nd, Nh, Nt
-double ratios[2];//ratio_NhNn/Nd^2, ratio_NtNp/Nd^2
+double ratios[Nratio];//ratio_NhNn/Nd^2, ratio_NtNp/Nd^2, ratio_Nh/Nd, ratio_Nt/Nd, ratio_Nd/Nn, ratio_Nd/Np
 
 void SetNs(int Nn_, int Np_, int Nd_, int Nh_, int Nt_)
 {
@@ -116,14 +117,14 @@ void SetH()
 			th2ds[i][j]=new TH2D(hname, htitle, 200,0,200, 200,0,200);
 		}
 	
-		for(int j=0; j<2; ++j)
+		for(int j=0; j<Nratio; ++j)
 		{
 			tag hname =GetHname("th2ds_ratio", i, j, "hname");
 			tag htitle=GetHname("th2ds_ratio", i, j, "htitle");
 			th2ds_ratio[i][j]=new TH2D(hname, htitle, 200,0,200, 10000,0,200);
 		}
 
-		for(int j=0; j<2; ++j)
+		for(int j=0; j<Nratio; ++j)
 		{
 			tag hname =GetHname("tps", i, j, "hname");
 			tag htitle=GetHname("tps", i, j, "htitle");
@@ -157,12 +158,12 @@ void CleanH()
 			delete th2ds[i][j];
 		}
 	
-		for(int j=0; j<2; ++j)
+		for(int j=0; j<Nratio; ++j)
 		{
 			delete th2ds_ratio[i][j];
 		}
 
-		for(int j=0; j<2; ++j)
+		for(int j=0; j<Nratio; ++j)
 		{
 			delete tps[i][j];
 		}
@@ -202,13 +203,13 @@ cout<<"LoadH "<<input->GetName()<<endl;
 			th2ds[i][j]=(TH2D*) input->Get(hname);
 		}
 	
-		for(int j=0; j<2; ++j)
+		for(int j=0; j<Nratio; ++j)
 		{
 			tag hname =GetHname("th2ds_ratio", i, j, "hname");
 			th2ds_ratio[i][j]=(TH2D*) input->Get(hname);
 		}
 
-		for(int j=0; j<2; ++j)
+		for(int j=0; j<Nratio; ++j)
 		{
 			tag hname =GetHname("tps", i, j, "hname");
 			tps[i][j]=(TProfile*) input->Get(hname);
@@ -228,12 +229,12 @@ void WriteH(TFile* output)
 			th2ds[i][j]->Write();
 		}
 	
-		for(int j=0; j<2; ++j)
+		for(int j=0; j<Nratio; ++j)
 		{
 			th2ds_ratio[i][j]->Write();
 		}
 
-		for(int j=0; j<2; ++j)
+		for(int j=0; j<Nratio; ++j)
 		{
 			tps[i][j]->Write();
 		}
@@ -256,6 +257,10 @@ void FillH()
 	{
 		ratios[0]=Nh_*Nn_/(Nd_*Nd_);
 		ratios[1]=Nt_*Np_/(Nd_*Nd_);
+		ratios[2]=Nh_/Nd_;
+		ratios[3]=Nt_/Nd_;
+		ratios[4]=Nd_/Nn_;
+		ratios[5]=Nd_/Np_;
 	}
 
 	for(int i=0; i<5; ++i)
@@ -265,12 +270,12 @@ void FillH()
 			th2ds[i][j]->Fill(Ns_free[i], Ns_free[j]);
 		}
 	
-		for(int j=0; j<2; ++j)
+		for(int j=0; j<Nratio; ++j)
 		{
 			if(Nd_free!=0){th2ds_ratio[i][j]->Fill(Ns_free[i], ratios[j]);}
 		}
 
-		for(int j=0; j<2; ++j)
+		for(int j=0; j<Nratio; ++j)
 		{
 			if(Nd_free!=0){tps[i][j]->Fill(Ns_free[i], ratios[j]);}
 		}
@@ -488,7 +493,7 @@ void DrawH(tag op)
 			
 		}
 
-		for(int j=0; j<2; ++j)
+		for(int j=0; j<Nratio; ++j)
 		{
 			tag xname=Ntitles[i];
 			tag yname=Rtitles[j];

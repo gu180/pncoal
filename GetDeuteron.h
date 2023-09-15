@@ -11,6 +11,7 @@ void GetDeuteron(tag intag, tag outtag)//This example shows the integral to calc
 
 	gROOT->ProcessLine(".L loader.C+");	
 
+	//double sigma_r=1.59; //fm charge radius of deuteron
 	double sigma_r=1.96; //fm charge radius of deuteron
 	double sigma_p=1/(5.068*sigma_r);//1.0 fm^-1=
 

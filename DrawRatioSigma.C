@@ -2,17 +2,20 @@
 #include "/home/gu180/utility/tstring_ut.h"
 #include "./filename_pncoal.h"
 #include "/home/gu180/utility/gr_operator_ut.h"
-#include "./DrawTriton.h"
+#include "GetInfo.h"
 #include "/home/gu180/utility/draw_object_ut.h"
 
-tag gAdtag="v10";
-vals gSigmas{0, 1 , 2, 3, 4, 5, 6, 7, 8, 9 ,10, 11, 12, 13, 14};
+tag gAdtag="v18_N100000";
+//tag gAdtag="v12";
+//vals gSigmas{0, 1 , 2, 3, 4, 5, 6, 7, 8, 9 ,10, 11, 12, 13, 14};
+vals gSigmas{0, 1 , 2, 3, 4, 5, 6};
 vals gSigmas_err(100,0);
 
 vector<double> GetRatio(double sigma_proton, double sigma_neutron, int idx_ratio, tag adtag)
 {
 	//tag vtag=Form("%sNsigma%.0f", adtag.Data(), sigma);
 	tag vtag=Form("%sNsigma_proton%.1f_Nsigma_neutron%.1f", adtag.Data(), sigma_proton, sigma_neutron);
+	cout<<"GetRatio vtag="<<vtag<<endl;
 	tag in=getfilename_drawtriton(vtag);
 	tag hname=GetHname("tps", 0,idx_ratio);
 	TFile* input=TFile::Open(in);
@@ -21,8 +24,11 @@ vector<double> GetRatio(double sigma_proton, double sigma_neutron, int idx_ratio
 	TProfile* tp_Nn_ratio=(TProfile*) input->Get(hname);
 	int nbins=tp_Nn_ratio->GetXaxis()->GetNbins();
 	tp_Nn_ratio->RebinX(nbins);
-	double ratio_val=tp_Nn_ratio->GetBinContent(1);
-	double ratio_err=tp_Nn_ratio->GetBinError(1);
+	//double ratio_val=tp_Nn_ratio->GetBinContent(1);
+	double ratio_val=ReadNum(input, Rnames[idx_ratio]);
+	double ratio_err=ReadNum(input, Rnames[idx_ratio]+"_err");
+	double ratio_err_old=tp_Nn_ratio->GetBinError(1);
+	cout<<"Check ratio_err new: "<<ratio_err<<" ratio_err old: "<<ratio_err_old<<endl;
 	
 	delete input;
 	
@@ -125,15 +131,15 @@ void DrawRS()
 {
 	tag adtag=gAdtag;//"v7";
 	//vals sigmas{0,1,2,3,4,5,6};
-	//tags pnames{"neutron", "proton"};
-	tags pnames{"total"};
+	tags pnames{"neutron", "proton"};
+	//tags pnames{"total"};
 	
 	vals sigmas=gSigmas;
 	vals sigmas_err=gSigmas_err;
 
 	for(int idx_N=0; idx_N<1; ++idx_N)
 	{
-	for(int idx_ratio=0; idx_ratio<2; ++idx_ratio)
+	for(int idx_ratio=0; idx_ratio<Nratio; ++idx_ratio)
 	{
 
 	vector<gr> grs_rs;
@@ -141,7 +147,8 @@ void DrawRS()
 	tags labels;	
 	tags labels_fit;	
 	tag on=plot_path+Form("%s/%s_vs_sigma_%s.pdf", adtag.Data(), Rnames[idx_ratio].Data(), pnames[idx_N].Data());
-	tag on_fit=plot_path+Form("%s/%s_vs_sigma_%s_withfits.pdf", adtag.Data(), Rnames[idx_ratio].Data(), pnames[idx_N].Data());
+	//tag on_fit=plot_path+Form("%s/%s_vs_sigma_%s_withfits.pdf", adtag.Data(), Rnames[idx_ratio].Data(), pnames[idx_N].Data());
+	tag on_fit=plot_path+Form("%s/%s_Nmean_Ratio_vs_dn2_%s_withfits_NmeanUncertaintyUnrel.pdf", adtag.Data(), Rnames[idx_ratio].Data(), pnames[idx_N].Data());
 	MakeDir(on);
 
 	for(int i=0; i<1; ++i)
@@ -152,29 +159,44 @@ void DrawRS()
 
 		vals ratio_vals;
 		vals ratio_errs;
+		vals xvals;
 		for(int j=0; j<sigmas.size(); ++j)
 		{
-			double sigma2=sigmas[j];
+			double sigma2=sigmas[j];//*sigmas[j]/(20*20);
 			vector<double> ratio;
-			if(idx_N==0){ratio=GetRatio(sigma1, sigma2, idx_ratio, adtag);}
-			if(idx_N==1){ratio=GetRatio(sigma2, sigma1, idx_ratio, adtag);}
+			//if(idx_N==0){ratio=GetRatio(sigma1, sigma2, idx_ratio, adtag);}
+			//if(idx_N==1){ratio=GetRatio(sigma2, sigma1, idx_ratio, adtag);}
+			//ratio=GetRatio(sigma2, sigma2, idx_ratio, adtag);
+			ratio=GetRatio(sigma1, sigma2, idx_ratio, adtag);
 			ratio_vals.push_back(ratio[0]);
 			ratio_errs.push_back(ratio[1]);
+
+			double xval=sigmas[j]*sigmas[j]/(20*20);
+			xvals.push_back(xval);
+			
 		}
-		gr gr_rs=GetGrObj(sigmas, ratio_vals, sigmas_err, ratio_errs);
+		//gr gr_rs=GetGrObj(sigmas, ratio_vals, sigmas_err, ratio_errs);
+		gr gr_rs=GetGrObj(xvals, ratio_vals, sigmas_err, ratio_errs);
 		TF1 tf1_rs("tf1_rs", "pol1", 0, 10);
 		gr_rs.Fit(&tf1_rs);
 		double slope_val=tf1_rs.GetParameter(1);
 		double slope_err=tf1_rs.GetParError(1);
 		//labels_fit.push_back(Form("%s, slope=%s",labels[i].Data(), ValErr(slope_val, slope_err).Data()));
-		labels_fit.push_back(Form("slope=%s", ValErr(slope_val, slope_err).Data()));
+		double chi2=tf1_rs.GetChisquare();
+		double ndf=tf1_rs.GetNDF();
+		labels_fit.push_back(Form("slope=%s #chi^{2}/dof=%.2f", ValErr(slope_val, slope_err).Data(), chi2/ndf));
 	
 		grs_rs.push_back(gr_rs);
 		tf1s_rs.push_back(tf1_rs);
 	}
 
-	DrawGrs(grs_rs, labels, on, Form("#sigma_{%s}",pnames[idx_N].Data()), Rtitles[idx_ratio]);
-	DrawGrsFits(grs_rs, tf1s_rs, labels_fit, on_fit, Form("#sigma_{%s}",pnames[idx_N].Data()), Rtitles[idx_ratio],"","", vals{0,15,0,1.2});
+	DrawObjGrs(grs_rs, labels, on, Form("#sigma_{%s}",pnames[idx_N].Data()), Rtitles[idx_ratio]);
+	//DrawObjGrsFits(grs_rs, tf1s_rs, labels_fit, on_fit, Form("#sigma_{%s}",pnames[idx_N].Data()), Rtitles[idx_ratio],"","", vals{0,15,0,1.2});
+	//DrawObjGrsFits(grs_rs, tf1s_rs, labels_fit, on_fit, Form("(#sigma/<N>)^{2}_{%s}",pnames[idx_N].Data()), Rtitles[idx_ratio],"","", vals{-0.0,0.1,0.35,0.55});
+	//pnames[idx_N]="nucleon";
+	//DrawObjGrsFits(grs_rs, tf1s_rs, labels_fit, on_fit, Form("(#sigma/<N>)^{2}_{%s}",pnames[idx_N].Data()), Rtitles[idx_ratio],"","", vals{-0.0,0.1,0.35,0.55});
+	//DrawObjGrsFits(grs_rs, tf1s_rs, labels_fit, on_fit, Form("(#sigma/<N>)^{2}_{%s}",pnames[idx_N].Data()), Rtitles[idx_ratio],"","");
+	DrawObjGrsFits(grs_rs, tf1s_rs, labels_fit, on_fit, Form("(#sigma/<N>)^{2}_{%s}",pnames[idx_N].Data()), Rtitles_allevent[idx_ratio],"","");
 	
 	}
 	}
@@ -184,5 +206,5 @@ void DrawRatioSigma()
 {
 	
 	DrawRS();
-	DrawTH2DRatio();
+	//DrawTH2DRatio();
 }
